@@ -61,6 +61,8 @@ var main=function(){
 			super(x,y);
 			this.width=width;
 			this.height=height;
+			this.movingLeft=false;
+			this.movingRight=false;
 		}
 		getWidth(){
 			return this.width;
@@ -93,9 +95,16 @@ var main=function(){
 			let nearY = clamp(this.y, rectangle.y, rectangle.y +rectangle.getHeight());
 			let dx=this.x - nearX;
 			let dy=this.y - nearY;
-			
-			this.y+=200;
+			if(this.y<300){
+				this.y+=dy;
+			}
+			if(this.y>300){
+				this.y-=dy+this.radius;
+			}	
 			circleVelocity.vy=-circleVelocity.vy;
+		}
+		checkBoundings(){
+		
 		}
 	}
 	let gameController=[];
@@ -113,16 +122,20 @@ var main=function(){
 					case 37:
 						//console.log("left arrow");
 						gameController[e.which || e.keyCode]=true;
+						player1.movingLeft=true;
 						//c1.move(-dx,0);
 						break;
 					case 38:
 						//console.log("up arrow");
 						gameController[e.which || e.keyCode]=true;
+						
 						//c1.move(-dx,0);
 						break;
 					case 39:
 						//console.log("right arrow");
 						gameController[e.which || e.keyCode]=true;
+						
+						player1.movingRight=true;
 						//c1.move(dx,0);
 						break;
 					case 40:
@@ -138,6 +151,7 @@ var main=function(){
 					case 37:
 						//console.log("left arrow");
 						gameController[e.which || e.keyCode]=false;
+						player1.movingLeft=false;
 						//c1.move(-dx,0);
 						break;
 					case 38:
@@ -148,6 +162,7 @@ var main=function(){
 					case 39:
 						//console.log("right arrow");
 						gameController[e.which || e.keyCode]=false;
+						player1.movingRight=false;
 						//c1.move(dx,0);
 						break;
 					case 40:
@@ -199,7 +214,11 @@ var main=function(){
 		if(ball.intersects(player1)){
 			console.log("intersecato");
 			ball.solveCollision(player1);
+		}else if(ball.intersects(player2)){
+			console.log("intersecato");
+			ball.solveCollision(player2);
 		}
+		
 		if(gameController[37]){
 			//rect1.move(-dx, 0);
 			player1.move(-playerVelocity,0,dtime/10);
@@ -229,7 +248,8 @@ var main=function(){
 		
 		clock=Date.now();
 		//console.log(delta);
-		console.log(ball);
+		//console.log(ball);
+		console.log(player1);
 		update(delta);
 		canvas.getContext().clearRect(0,0, canvas.getWidth(), canvas.getHeight());
 		draw();
