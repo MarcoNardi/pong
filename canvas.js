@@ -6,8 +6,6 @@
 /* eslint-disable no-console*/
 
 
-
-
 /*
 JET #333
 MEDIUM CANDY APPLE RED D90429
@@ -34,17 +32,21 @@ var main = function () {
 		return Math.max(min, Math.min(max, val));
 	}
 
-	/*
-	function solveCollision(circle, rectangle){
-		let nearX = clamp(circle.x, rectangle.x, rectangle.x +rectangle.getWidth());
-		let nearY = clamp(circle.y, rectangle.y, rectangle.y +rectangle.getHeight());
-		
-		//let dx=circle.x - nearX;
-		let dy=circle.y - nearY;
-		
-		circle.y+=circle.radius+dy;
-		circleVelocity=-circleVelocity;
-	}*/
+	function updateScore(id, player) {
+		let text = document.getElementById(id);
+		if (text === null) {
+			console.log("errore")
+			return;
+		}
+		if (player == 1) {
+			score.p1++;
+			text.innerHTML = "Player1:" + score.p1;
+		}
+		if (player == 2) {
+			score.p2++;
+			text.innerHTML = "Player2:" + score.p2;
+		}
+	}
 
 	class Shape {
 		constructor(x, y) {
@@ -70,6 +72,21 @@ var main = function () {
 		}
 		getHeight() {
 			return this.height;
+		}
+		checkboundings(canvas) {
+			if (this.x + this.width > canvas.getWidth()) {
+				if (this.x < canvas.getWidth()) {
+					let dx = this.x + this.width - canvas.getWidth();
+					this.x -= dx;
+					console.log(this);
+				}
+
+				//this.x -= this.width;
+			} else if (this.x < 0) {
+
+				let dx = this.x;
+				this.x -= dx;
+			}
 		}
 	}
 	class Circle extends Shape {
@@ -134,25 +151,7 @@ var main = function () {
 			this.velocity.vy = -this.velocity.vy;
 		}
 		checkBoundings(canvas) {
-			/*
-				if (lastBounce >= (Date.now() - delay)) {
-					return;
-				}
-				lastBounce = Date.now();
-				if (this.x + this.radius >= canvas.getWidth() || this.x - this.radius <= 0) {
 
-					console.log("boing");
-					this.velocity.vx = -this.velocity.vx;
-					let dx = canvas.getWidth() - this.x;
-					if (this.x + this.radius >= canvas.getWidth()) {
-						this.x -= dx + this.radius;
-						//this.x -= 50;
-					} else {
-						this.x += dx + this.radius;
-						//this.x += 50;
-					}
-				}
-			*/
 			if (lastBounce >= (Date.now() - delay)) {
 				return;
 			}
@@ -161,14 +160,46 @@ var main = function () {
 				console.log("bounce");
 				this.velocity.vx = -this.velocity.vx;
 
-				this.x -= this.x - canvas.getWidth() + this.radius
+				this.x -= this.x - canvas.getWidth() + this.radius;
 			}
 			if (this.x <= 0 + this.radius) {
 				console.log("bounce");
 				this.velocity.vx = -this.velocity.vx;
 
-				this.x += (-this.x) + this.radius
+				this.x += (-this.x) + this.radius;
 			}
+		}
+		reset(canvas) {
+			this.x = canvas.getWidth() / 2;
+			this.y = canvas.getHeight() / 2;
+			let directionX;
+			let directionY;
+			if (Math.random() > 0.49) {
+				directionX = -1;
+			} else {
+				directionX = 1;
+			}
+			if (Math.random() > 0.49) {
+				directionY = -1;
+			} else {
+				directionY = 1;
+			}
+			this.velocity.vx = this.initialVelocity.vx * 2 * directionX * Math.random();
+			do {
+				this.velocity.vy = this.initialVelocity.vy * 3 * directionY * Math.random();
+			} while (Math.abs(this.velocity.vy) <= 2.5);
+
+		}
+		checkScored(canvas) {
+			if (this.y <= 0) {
+				updateScore("p2score", 2);
+				this.reset(canvas);
+			} else if (this.y >= canvas.getHeight()) {
+				updateScore("p1score", 1);
+				this.reset(canvas);
+			}
+
+
 		}
 
 	}
@@ -289,18 +320,15 @@ var main = function () {
 
 	let canvas = new Canvas("myCanvas");
 	canvas.start();
-	console.log(canvas.getWidth());
-	let playerVelocity = 5;
 
+	let playerVelocity = 5;
 	let player1 = new Rectangle(canvas.getWidth() / 2 - 50, 0, 100, 20);
 	let player2 = new Rectangle(canvas.getWidth() / 2 - 50, canvas.getHeight() - 20, 100, 20);
 	let ball = new Circle(canvas.getWidth() / 2, canvas.getHeight() / 2, 18, 0, 2 * Math.PI);
+	ball.reset(canvas);
 
 	function update(dtime) {
-		//c1.translate(dx,dy);
-		//console.log(gameController[37]);
-		//console.log(gameController[39]);
-		ball.checkBoundings(canvas);
+
 		if (ball.intersects(player1)) {
 			console.log("intersecato");
 			console.log(player1);
@@ -310,18 +338,18 @@ var main = function () {
 			console.log(player2);
 			ball.solveCollision(player2, dtime);
 		}
-
+		player1.checkboundings(canvas);
+		player2.checkboundings(canvas);
 		if (gameController[37]) {
-			//rect1.move(-dx, 0);
 			player1.move(-playerVelocity, 0, dtime / 10);
 
-			//ball.move(-playerVelocity,0,dtime/10);
 		}
 		if (gameController[65]) {
 			player2.move(-playerVelocity, 0, dtime / 10);
+
 		}
 		if (gameController[39]) {
-			//rect1.move(dx, 0);
+
 			player1.move(playerVelocity, 0, dtime / 10);
 		}
 		if (gameController[68]) {
@@ -343,14 +371,17 @@ var main = function () {
 
 		}
 		ball.move(ball.velocity.vx, -ball.velocity.vy, dtime / 10);
+		ball.checkBoundings(canvas);
+		ball.checkScored(canvas);
 
 	}
+
+
 
 	function draw() {
 		canvas.drawRectangle(player1, colors.candyApple);
 		canvas.drawRectangle(player2, colors.queenBlue);
 		canvas.drawCircle(ball, "white");
-		//canvas.drawCircle(c1, "red");
 	}
 
 	function gameLoop() {
@@ -367,7 +398,5 @@ var main = function () {
 	}
 	requestAnimationFrame(gameLoop);
 	let clock = Date.now();
-	setInterval(function () {
-		console.log(ball.velocity.vx);
-	}, 200);
+
 }
